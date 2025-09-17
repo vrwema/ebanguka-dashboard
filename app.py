@@ -111,8 +111,15 @@ def main():
         st.error("Unable to load data. Please try again later.")
         return
     
-    # Display last updated time
-    st.info(f"📊 Data last updated: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')} | Total records: {len(df)}")
+    # Display last updated time in local timezone
+    from datetime import datetime
+    import pytz
+    
+    # Get current time in Rwanda timezone (or your local timezone)
+    local_tz = pytz.timezone('Africa/Kigali')  # Rwanda timezone
+    current_time = datetime.now(local_tz).strftime('%Y-%m-%d %H:%M:%S')
+    
+    st.info(f"📊 Data last updated: {current_time} | Total records: {len(df)}")
     
     # Sidebar filters
     st.sidebar.header("Filters")
