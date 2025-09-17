@@ -6,6 +6,7 @@ import json
 import numpy as np
 import urllib3
 from urllib3.exceptions import InsecureRequestWarning
+import time
 
 # Disable SSL warnings
 urllib3.disable_warnings(InsecureRequestWarning)
@@ -15,7 +16,7 @@ st.set_page_config(
     layout="wide"
 )
 
-@st.cache_data(ttl=1800)  # Cache for 30 minutes
+@st.cache_data(ttl=60)  # Cache for 1 minute
 def load_data():
     """Load and preprocess the emergency transfer data from API"""
     try:
@@ -88,6 +89,19 @@ def extract_facility_name(facility_json):
 
 def main():
     st.title("eBanguka Emergency Analytics Dashboard")
+    
+    # Auto-refresh every 60 seconds
+    st_autorefresh = st.empty()
+    with st_autorefresh:
+        st.markdown("""
+        <meta http-equiv="refresh" content="60">
+        <script>
+        setTimeout(function(){
+            window.location.reload();
+        }, 60000);
+        </script>
+        """, unsafe_allow_html=True)
+    
     st.markdown("---")
     
     # Load data
@@ -290,52 +304,18 @@ def main():
             st.write("No facility data available")
     
     # Transfer reasons analysis
-    st.subheader("Top Transfer Reasons")
-    reason_counts = filtered_df['transferReason'].value_counts().head(15).sort_values(ascending=True)
-    if len(reason_counts) > 0:
-        fig = px.bar(
-            x=reason_counts.values,
-            y=reason_counts.index,
-            orientation='h',
-            title="Top 15 Transfer Reasons",
-            labels={'x': 'Number of Transfers', 'y': 'Transfer Reason'}
-        )
-        st.plotly_chart(fig, use_container_width=True)
+    # st.subheader("Top Transfer Reasons")
+    # reason_counts = filtered_df['transferReason'].value_counts().head(15).sort_values(ascending=True)
+    # if len(reason_counts) > 0:
+    #     fig = px.bar(
+    #         x=reason_counts.values,
+    #         y=reason_counts.index,
+    #         orientation='h',
+    #         title="Top 15 Transfer Reasons",
+    #         labels={'x': 'Number of Transfers', 'y': 'Transfer Reason'}
+    #     )
+    #     st.plotly_chart(fig, use_container_width=True)
     
-    # Data table
-    st.subheader("Recent Transfer Data")
-    display_columns = [
-        'caseCode', 'createdAt', 'transferType', 'gender', 'age', 
-        'province', 'district', 'origin_facility_name', 'receiving_facility_name',
-        'transferReason', 'transportationType'
-    ]
-    
-    available_columns = [col for col in display_columns if col in filtered_df.columns]
-    recent_transfers = filtered_df[available_columns].sort_values('createdAt', ascending=False).head(20)
-    
-    st.dataframe(
-        recent_transfers,
-        use_container_width=True,
-        hide_index=True
-    )
-    
-    # Summary statistics
-    st.subheader("Summary Statistics")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.write("**Transfer Type Distribution:**")
-        transfer_stats = filtered_df['transferType'].value_counts()
-        for transfer_type, count in transfer_stats.items():
-            percentage = (count / len(filtered_df)) * 100 if len(filtered_df) > 0 else 0
-            st.write(f"- {transfer_type}: {count} ({percentage:.1f}%)")
-    
-    with col2:
-        st.write("**Gender Distribution:**")
-        gender_stats = filtered_df['gender'].value_counts()
-        for gender, count in gender_stats.items():
-            percentage = (count / len(filtered_df)) * 100 if len(filtered_df) > 0 else 0
-            st.write(f"- {gender}: {count} ({percentage:.1f}%)")
 
 if __name__ == "__main__":
     main()
